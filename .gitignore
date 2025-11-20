@@ -40,3 +40,24 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Logic Apps local development
+logic-apps/.vscode/
+logic-apps/local.settings.json
+logic-apps/__blobstorage__/
+logic-apps/__queuestorage__/
+logic-apps/__azurite_db*__.json

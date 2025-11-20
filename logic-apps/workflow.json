@@ -1,0 +1,191 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Check_Allowed_Sender": {
+        "type": "If",
+        "expression": {
+          "and": [
+            {
+              "contains": [
+                "@parameters('allowedSenders')",
+                "@triggerOutputs()?['body/from']"
+              ]
+            }
+          ]
+        },
+        "actions": {
+          "Call_Container_App_API": {
+            "type": "Http",
+            "inputs": {
+              "method": "POST",
+              "uri": "@{parameters('containerAppUrl')}/workflow",
+              "headers": {
+                "Content-Type": "application/json"
+              },
+              "body": {
+                "input_text": "@triggerOutputs()?['body/bodyPreview']"
+              }
+            },
+            "runAfter": {}
+          },
+          "Parse_API_Response": {
+            "type": "ParseJson",
+            "inputs": {
+              "content": "@body('Call_Container_App_API')",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "success": {
+                    "type": "boolean"
+                  },
+                  "output_text": {
+                    "type": "string"
+                  },
+                  "error": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "runAfter": {
+              "Call_Container_App_API": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Check_API_Success": {
+            "type": "If",
+            "expression": {
+              "and": [
+                {
+                  "equals": [
+                    "@body('Parse_API_Response')?['success']",
+                    true
+                  ]
+                }
+              ]
+            },
+            "actions": {
+              "Send_Reply_Email": {
+                "type": "ApiConnection",
+                "inputs": {
+                  "host": {
+                    "connection": {
+                      "referenceName": "outlook"
+                    }
+                  },
+                  "method": "post",
+                  "path": "/v2/Mail",
+                  "body": {
+                    "To": "@triggerOutputs()?['body/from']",
+                    "Subject": "Re: @{triggerOutputs()?['body/subject']}",
+                    "Body": "@body('Parse_API_Response')?['output_text']",
+                    "Importance": "Normal"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Mark_Email_As_Read": {
+                "type": "ApiConnection",
+                "inputs": {
+                  "host": {
+                    "connection": {
+                      "referenceName": "outlook"
+                    }
+                  },
+                  "method": "patch",
+                  "path": "/v2/Mail/@{encodeURIComponent(triggerOutputs()?['body/id'])}",
+                  "body": {
+                    "IsRead": true
+                  }
+                },
+                "runAfter": {
+                  "Send_Reply_Email": [
+                    "Succeeded"
+                  ]
+                }
+              }
+            },
+            "else": {
+              "actions": {
+                "Log_API_Error": {
+                  "type": "Compose",
+                  "inputs": {
+                    "timestamp": "@utcNow()",
+                    "error": "@body('Parse_API_Response')?['error']",
+                    "emailId": "@triggerOutputs()?['body/id']",
+                    "sender": "@triggerOutputs()?['body/from']"
+                  },
+                  "runAfter": {}
+                }
+              }
+            },
+            "runAfter": {
+              "Parse_API_Response": [
+                "Succeeded"
+              ]
+            }
+          }
+        },
+        "else": {
+          "actions": {
+            "Log_Unauthorized_Sender": {
+              "type": "Compose",
+              "inputs": {
+                "timestamp": "@utcNow()",
+                "message": "Email from unauthorized sender",
+                "sender": "@triggerOutputs()?['body/from']",
+                "subject": "@triggerOutputs()?['body/subject']"
+              },
+              "runAfter": {}
+            }
+          }
+        },
+        "runAfter": {}
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {},
+    "triggers": {
+      "When_a_new_email_arrives": {
+        "type": "ApiConnection",
+        "inputs": {
+          "host": {
+            "connection": {
+              "referenceName": "outlook"
+            }
+          },
+          "method": "get",
+          "path": "/v2/Mail/OnNewEmail",
+          "queries": {
+            "importance": "Any",
+            "fetchOnlyWithAttachment": false,
+            "includeAttachments": false,
+            "folderPath": "Inbox"
+          }
+        },
+        "recurrence": {
+          "interval": "@parameters('checkFrequency')",
+          "frequency": "Minute"
+        },
+        "splitOn": "@triggerBody()?['value']"
+      }
+    },
+    "parameters": {
+      "allowedSenders": {
+        "type": "Array",
+        "defaultValue": []
+      },
+      "containerAppUrl": {
+        "type": "String",
+        "defaultValue": ""
+      },
+      "checkFrequency": {
+        "type": "Int",
+        "defaultValue": 3
+      }
+    }
+  },
+  "kind": "Stateful"
+}
