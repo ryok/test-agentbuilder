@@ -1,0 +1,11 @@
+{
+  "allowedSenders": {
+    "value": "@appsetting('ALLOWED_SENDERS')"
+  },
+  "containerAppUrl": {
+    "value": "@appsetting('CONTAINER_APP_URL')"
+  },
+  "checkFrequency": {
+    "value": "@appsetting('EMAIL_CHECK_FREQUENCY')"
+  }
+}

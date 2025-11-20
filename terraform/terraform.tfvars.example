@@ -1,0 +1,75 @@
+# terraform.tfvars.example
+# Copy this file to terraform.tfvars and fill in your values
+
+# Required: Name of your existing Azure Resource Group
+resource_group_name = "your-resource-group-name"
+
+# Required: Azure region for deployment
+location = "eastus"
+
+# Required: OpenAI API Key (will be stored securely in Key Vault)
+# This is the only sensitive value you need to provide
+openai_api_key = "sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Optional: Project configuration
+project_name = "email-agent"
+environment  = "dev"
+
+# Optional: Container scaling configuration
+container_app_min_replicas = 1
+container_app_max_replicas = 10
+
+# Optional: Container resource allocation
+container_cpu    = 0.5    # CPU cores (0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0)
+container_memory = "1Gi"  # Memory (0.5Gi, 1Gi, 1.5Gi, 2Gi, 3Gi, 3.5Gi, 4Gi)
+
+# Optional: Virtual Network configuration
+# Set to true to create a new VNet, or false to use existing
+create_new_vnet = true
+
+# If using existing VNet, specify these:
+# existing_vnet_name   = "your-vnet-name"
+# existing_subnet_name = "your-subnet-name"
+
+# If creating new VNet, customize address spaces:
+# vnet_address_space           = ["10.0.0.0/16"]
+# container_apps_subnet_prefix = "10.0.0.0/21"
+
+# Optional: Enable/disable additional services
+enable_application_insights = true
+enable_storage_account      = true
+
+# Optional: Container Registry SKU
+# acr_sku = "Basic"  # Options: Basic, Standard, Premium
+
+# Optional: Container image (if you want to specify a specific image)
+# Leave null to use the default image built from this project
+# container_image = "youracr.azurecr.io/email-agent:v1.0.0"
+
+# Optional: Custom tags for all resources
+tags = {
+  Project     = "email-agent-workflow"
+  ManagedBy   = "Terraform"
+  Environment = "dev"
+  Owner       = "your-name"
+}
+
+# Optional: Logic Apps configuration
+# Set to true to enable email integration with Logic Apps
+enable_logic_apps = false
+
+# Logic Apps SKU (if enabled)
+# logic_app_sku = "WS1"  # Options: WS1, WS2, WS3
+
+# Allowed email senders (required if Logic Apps is enabled)
+# Only emails from these addresses will be processed
+# allowed_email_senders = [
+#   "user1@example.com",
+#   "user2@example.com"
+# ]
+
+# Email check frequency in minutes (default: 3)
+# email_check_frequency = 3
+
+# Enable CORS for Logic Apps (allows Azure Portal access)
+# logic_app_enable_cors = true
